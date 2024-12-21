@@ -5,7 +5,7 @@ const { SocksProxyAgent } = require('socks-proxy-agent');
 const { v4: uuidv4, v3: uuidv3 } = require('uuid');
 const pino = require('pino');
 const logger = pino({ level: 'info', transport: { target: 'pino-pretty' } });
-const config = require('./config');
+const config = require('./configuration');
 
 let CoderMarkPrinted = false;
 
@@ -45,8 +45,14 @@ async function connectToWss(socks5Proxy, userId) {
             const uriList = ["wss://proxy2.wynd.network:4444/", "wss://proxy2.wynd.network:4650/"];
             const uri = uriList[Math.floor(Math.random() * uriList.length)];
             const agent = new SocksProxyAgent(socks5Proxy);
-            const ws = new WebSocket(uri, { agent, headers: { "User-Agent": customHeaders["User-Agent"] }, rejectUnauthorized: false });
-
+            const ws = new WebSocket(uri, {
+                agent: agent,
+                headers: {
+                    "Origin": config["Origin"],
+                    "User-Agent": customHeaders["User-Agent"]
+                },
+                rejectUnauthorized: false
+            });
             ws.on('open', () => {
                 const sendPing = () => {
                     const sendMessage = JSON.stringify({ id: uuidv4(), version: "1.0.0", action: "PING", data: {} });
@@ -69,8 +75,9 @@ async function connectToWss(socks5Proxy, userId) {
                             user_id: userId,
                             user_agent: customHeaders['User-Agent'],
                             timestamp: Math.floor(Date.now() / 1000),
-                            device_type: "desktop",
-                            version: "4.29.0",
+                            device_type: "extension",
+                            version: "4.26.2",
+                            extension_id: config.extension_id
                         }
                     };
                     logger.debug(authResponse);
